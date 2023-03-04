@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+           jaxb:extensionBindingPrefixes="xjc"
+           jaxb:version="1.0">
+
+    <xs:annotation>
+        <xs:appinfo>
+            <jaxb:globalBindings>
+                <xjc:serializable/>
+            </jaxb:globalBindings>
+        </xs:appinfo>
+    </xs:annotation>
+
+    <xs:complexType name="applicationSystem">
+        <xs:sequence>
+            <xs:element name="connections" type="connection" maxOccurs="unbounded" minOccurs="0"/>
+            <xs:element name="services" type="service" maxOccurs="unbounded" minOccurs="0"/>
+            <xs:element name="bytesExchangedTotal" type="xs:decimal"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="connection">
+        <xs:sequence>
+            <xs:element name="service1" type="service"/>
+            <xs:element name="service2" type="service"/>
+            <xs:element name="bytesExchanged" type="xs:decimal"/>
+            <xs:element name="affinity" type="xs:decimal"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="service">
+        <xs:sequence>
+            <xs:element name="ipAdresse" type="xs:string"/>
+            <xs:element name="port" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
