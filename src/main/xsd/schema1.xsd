@@ -32,6 +32,7 @@
 
     <xs:complexType name="service">
         <xs:sequence>
+            <xs:element name="id" type="xs:string"/>
             <xs:element name="ipAdresse" type="xs:string"/>
             <xs:element name="port" type="xs:string"/>
         </xs:sequence>
