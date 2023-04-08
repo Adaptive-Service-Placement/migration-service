@@ -50,8 +50,10 @@ public class MigrationRequestConsumer {
 
             new PodNodeAffinityHandler(api, podNodeAssignement).setAllAffinities();
         } catch (IOException e) {
+            System.out.println("Oops something went wrong");
             e.printStackTrace();
         } catch (ApiException e) {
+            System.out.println("Oops something went wrong");
             System.out.println(e.getResponseBody());
         }
 
