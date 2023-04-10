@@ -1,21 +1,15 @@
 package com.example.migrationservice;
 
 import com.example.migrationservice.dto.MigrationInstruction;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.util.ClientBuilder;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class KubernetesApiInstructionConverter {
@@ -28,7 +22,7 @@ public class KubernetesApiInstructionConverter {
         this.migrationInstruction = migrationInstruction;
     }
 
-    public Map<V1Node, List<V1Pod>> getPodAffinities() throws ApiException {
+    public Map<V1Node, List<V1Pod>> getPodNodeAssignement() throws ApiException {
         V1PodList pods = receiveAllPods();
         V1NodeList nodes = receiveAllNodes();
 
@@ -68,7 +62,20 @@ public class KubernetesApiInstructionConverter {
                 .filter(pod -> pod.getStatus() != null &&
                         service.getIpAdresse().equals(pod.getStatus().getPodIP()))
                 .findFirst()
+                .map(this::clone)
                 .orElse(null);
+    }
+
+    private V1Pod clone(V1Pod pod) {
+        V1Pod clone = new V1Pod();
+        clone.setMetadata(pod.getMetadata());
+        Objects.requireNonNull(pod.getMetadata()).setResourceVersion(null);
+        clone.setSpec(pod.getSpec());
+        clone.setApiVersion(pod.getApiVersion());
+        clone.setKind(pod.getKind());
+        clone.setStatus(pod.getStatus());
+
+        return clone;
     }
 
     private V1PodList receiveAllPods() throws ApiException {

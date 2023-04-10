@@ -1,7 +1,7 @@
 package com.example.migrationservice.consumer;
 
 import com.example.migrationservice.KubernetesApiInstructionConverter;
-import com.example.migrationservice.PodNodeAffinityHandler;
+import com.example.migrationservice.PodNodeMigrationHandler;
 import com.example.migrationservice.Service;
 import com.example.migrationservice.config.MessagingConfig;
 import com.example.migrationservice.dto.MigrationInstruction;
@@ -46,9 +46,9 @@ public class MigrationRequestConsumer {
             CoreV1Api api = new CoreV1Api();
 
             KubernetesApiInstructionConverter converter = new KubernetesApiInstructionConverter(api, migrationInstruction);
-            Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodAffinities();
+            Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodNodeAssignement();
 
-            new PodNodeAffinityHandler(api, podNodeAssignement).setAllAffinities();
+            new PodNodeMigrationHandler().migratePods(api, podNodeAssignement);
         } catch (IOException e) {
             System.out.println("Oops something went wrong");
             e.printStackTrace();
