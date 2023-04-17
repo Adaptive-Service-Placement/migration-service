@@ -21,12 +21,19 @@ public class PodNodeMigrationHandler {
                 if (pod.getMetadata() == null || destinedNode.getMetadata() == null || pod.getSpec() == null) {
                     continue;
                 }
-                pod.getSpec().setNodeName(destinedNode.getMetadata().getName());
 
-                System.out.println("Moving Pod: " + pod.getMetadata().getName() + " to Node: " + destinedNode.getMetadata().getName());
+                // check if pod needs to move
+                if (pod.getSpec().getNodeName() != null &&
+                        destinedNode.getMetadata().getName() != null &&
+                        pod.getSpec().getNodeName().equals(destinedNode.getMetadata().getName())) {
 
-                api.deleteNamespacedPod(Objects.requireNonNull(pod.getMetadata()).getName(), System.getenv("NAMESPACE"), null, null, 0, null, "Background", null);
-                api.createNamespacedPod(System.getenv("NAMESPACE"), pod, null, null, null, null);
+                    pod.getSpec().setNodeName(destinedNode.getMetadata().getName());
+
+                    System.out.println("Moving Pod: " + pod.getMetadata().getName() + " to Node: " + destinedNode.getMetadata().getName());
+
+                    api.deleteNamespacedPod(Objects.requireNonNull(pod.getMetadata()).getName(), System.getenv("NAMESPACE"), null, null, 0, null, "Background", null);
+                    api.createNamespacedPod(System.getenv("NAMESPACE"), pod, null, null, null, null);
+                }
             }
         }
     }
