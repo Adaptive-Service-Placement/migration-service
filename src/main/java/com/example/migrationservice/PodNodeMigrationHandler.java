@@ -13,11 +13,13 @@ import java.util.Objects;
 public class PodNodeMigrationHandler {
 
     public void migratePods(CoreV1Api api, Map<V1Node, List<V1Pod>> podNodeAssignement) throws ApiException {
-        System.out.println("Instructions: " + podNodeAssignement);
         System.out.println("Migrating services...");
         for (Entry<V1Node, List<V1Pod>> entry : podNodeAssignement.entrySet()) {
             List<V1Pod> groupedPods = entry.getValue();
             V1Node destinedNode = entry.getKey();
+
+            System.out.println("Amount of Pods: " + groupedPods.size());
+            System.out.println("Destined Node: " + destinedNode);
 
             for (V1Pod pod : groupedPods) {
                 if (pod.getMetadata() == null || destinedNode.getMetadata() == null || pod.getSpec() == null) {
