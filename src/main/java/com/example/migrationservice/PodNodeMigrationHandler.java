@@ -32,7 +32,7 @@ public class PodNodeMigrationHandler {
                 // check if pod needs to move
                 if (pod.getSpec().getNodeName() != null &&
                         destinedNode.getMetadata().getName() != null &&
-                        pod.getSpec().getNodeName().equals(destinedNode.getMetadata().getName())) {
+                        !pod.getSpec().getNodeName().equals(destinedNode.getMetadata().getName())) {
 
                     pod.getSpec().setNodeName(destinedNode.getMetadata().getName());
 

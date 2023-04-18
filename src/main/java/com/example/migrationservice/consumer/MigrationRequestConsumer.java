@@ -20,44 +20,48 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
 public class MigrationRequestConsumer {
 
-    @Autowired
-    RabbitTemplate template;
-
     @RabbitListener(queues = MessagingConfig.EXECUTE_MIGRATION_QUEUE)
     public void handleMigrationRequest(MigrationInstruction migrationInstruction) {
-        System.out.println("Migration Request has been received!");
-        for (Set<Service> group : migrationInstruction.getGroups()) {
-            System.out.println("Please migrate these services together:");
-            System.out.println(group.stream()
-                    .map(service -> service.getIpAdresse() + ":" + service.getPort())
-                    .collect(Collectors.joining(", ")));
-        }
-
-        try {
-            ApiClient client = ClientBuilder.cluster().build();
-            Configuration.setDefaultApiClient(client);
-
-            CoreV1Api api = new CoreV1Api();
-
-            KubernetesApiInstructionConverter converter = new KubernetesApiInstructionConverter(api, migrationInstruction);
-            Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodNodeAssignement();
-
-            if (podNodeAssignement != null) {
-                new PodNodeMigrationHandler().migratePods(api, podNodeAssignement);
+        if (migrationInstruction != null) {
+            System.out.println("Migration Request has been received!");
+            for (Set<Service> group : migrationInstruction.getGroups()) {
+                System.out.println("Please migrate these services together:");
+                System.out.println(group.stream()
+                        .filter(Objects::nonNull)
+                        .map(service -> service.getIpAdresse() + ":" + service.getPort())
+                        .collect(Collectors.joining(", ")));
             }
-        } catch (IOException e) {
-            System.out.println("Oops something went wrong");
-            e.printStackTrace();
-        } catch (ApiException e) {
-            System.out.println("Oops something went wrong");
-            System.out.println(e.getResponseBody());
+
+            try {
+                ApiClient client = ClientBuilder.cluster().build();
+                Configuration.setDefaultApiClient(client);
+
+                CoreV1Api api = new CoreV1Api();
+
+                KubernetesApiInstructionConverter converter = new KubernetesApiInstructionConverter(api, migrationInstruction);
+                Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodNodeAssignement();
+
+                if (podNodeAssignement != null) {
+                    new PodNodeMigrationHandler().migratePods(api, podNodeAssignement);
+                }
+            } catch (IOException e) {
+                System.out.println("Oops something went wrong");
+                e.printStackTrace();
+            } catch (ApiException e) {
+                System.out.println("Oops something went wrong");
+                System.out.println(e.getResponseBody());
+            }
         }
 
     }
+
+    @Autowired
+    RabbitTemplate template;
 }
