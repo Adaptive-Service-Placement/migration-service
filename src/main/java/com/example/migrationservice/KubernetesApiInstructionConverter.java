@@ -54,6 +54,7 @@ public class KubernetesApiInstructionConverter {
     private List<V1Pod> convertServicesToCorrespondingPods(Set<Service> services, V1PodList pods) {
         return services.stream()
                 .map(service -> getPodFromService(pods, service))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
