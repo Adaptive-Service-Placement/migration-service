@@ -23,8 +23,11 @@ public class PodNodeMigrationHandler {
 
             for (V1Pod pod : groupedPods) {
                 if (pod.getMetadata() == null || destinedNode.getMetadata() == null || pod.getSpec() == null) {
+                    System.out.println("Pod does not have the necessary information!");
                     continue;
                 }
+
+                System.out.println("Checking Pod status...");
 
                 // check if pod needs to move
                 if (pod.getSpec().getNodeName() != null &&
