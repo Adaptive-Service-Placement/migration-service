@@ -48,7 +48,9 @@ public class MigrationRequestConsumer {
             KubernetesApiInstructionConverter converter = new KubernetesApiInstructionConverter(api, migrationInstruction);
             Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodNodeAssignement();
 
-            new PodNodeMigrationHandler().migratePods(api, podNodeAssignement);
+            if (podNodeAssignement != null) {
+                new PodNodeMigrationHandler().migratePods(api, podNodeAssignement);
+            }
         } catch (IOException e) {
             System.out.println("Oops something went wrong");
             e.printStackTrace();
