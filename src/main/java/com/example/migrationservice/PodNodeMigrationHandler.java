@@ -19,7 +19,7 @@ public class PodNodeMigrationHandler {
             V1Node destinedNode = entry.getKey();
 
             System.out.println("Amount of Pods: " + groupedPods.size());
-            System.out.println("Destined Node: " + destinedNode);
+            System.out.println("Destined Node: " + Objects.requireNonNull(destinedNode.getMetadata()).getName());
 
             for (V1Pod pod : groupedPods) {
                 if (pod.getMetadata() == null || destinedNode.getMetadata() == null || pod.getSpec() == null) {
