@@ -34,7 +34,8 @@ public class PodNodeMigrationHandler {
                         destinedNode.getMetadata().getName() != null &&
                         !pod.getSpec().getNodeName().equals(destinedNode.getMetadata().getName())) {
 
-                    pod.getSpec().setNodeName(destinedNode.getMetadata().getName());
+                    pod.getSpec().putNodeSelectorItem("kubernetes.io/hostname", destinedNode.getMetadata().getName());
+//                    pod.getSpec().setNodeName(destinedNode.getMetadata().getName());
 
                     System.out.println("Moving Pod: " + pod.getMetadata().getName() + " to Node: " + destinedNode.getMetadata().getName());
 
