@@ -8,6 +8,7 @@ import com.example.migrationservice.dto.MigrationInstruction;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -44,12 +45,13 @@ public class MigrationRequestConsumer {
                 Configuration.setDefaultApiClient(client);
 
                 CoreV1Api api = new CoreV1Api();
+                AppsV1Api appsV1Api = new AppsV1Api();
 
                 KubernetesApiInstructionConverter converter = new KubernetesApiInstructionConverter(api, migrationInstruction);
                 Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodNodeAssignement();
 
                 if (podNodeAssignement != null) {
-                    new PodNodeMigrationHandler().migratePods(api, podNodeAssignement);
+                    new PodNodeMigrationHandler().migratePods(api, appsV1Api, podNodeAssignement);
                 }
             } catch (IOException e) {
                 System.out.println("Oops something went wrong");

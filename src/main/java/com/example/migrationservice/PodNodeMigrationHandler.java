@@ -1,25 +1,21 @@
 package com.example.migrationservice;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Node;
-import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 public class PodNodeMigrationHandler {
 
-    public void migratePods(CoreV1Api api, Map<V1Node, List<V1Pod>> podNodeAssignement) throws ApiException {
+    public void migratePods(CoreV1Api api, AppsV1Api appsV1Api, Map<V1Node, List<V1Pod>> podNodeAssignement) throws ApiException {
         System.out.println("Migrating services...");
         for (Entry<V1Node, List<V1Pod>> entry : podNodeAssignement.entrySet()) {
             List<V1Pod> groupedPods = entry.getValue();
             V1Node destinedNode = entry.getKey();
-
-            System.out.println("Amount of Pods: " + groupedPods.size());
-            System.out.println("Destined Node: " + Objects.requireNonNull(destinedNode.getMetadata()).getName());
 
             for (V1Pod pod : groupedPods) {
                 if (pod.getMetadata() == null || destinedNode.getMetadata() == null || pod.getSpec() == null) {
@@ -27,22 +23,51 @@ public class PodNodeMigrationHandler {
                     continue;
                 }
 
-                System.out.println("Checking Pod status...");
+                System.out.println("Moving Pod: " + pod.getMetadata().getName() + " to: " + destinedNode.getMetadata().getName());
 
-                // check if pod needs to move
-                if (pod.getSpec().getNodeName() != null &&
-                        destinedNode.getMetadata().getName() != null &&
-                        !pod.getSpec().getNodeName().equals(destinedNode.getMetadata().getName())) {
+                // find deployment responsible for the pod
+                String releaseLabelValue = pod.getMetadata().getLabels() != null ? pod.getMetadata().getLabels().get("release") : "";
+                V1DeploymentList deployments = appsV1Api.listNamespacedDeployment("default", null, null, null, null, "release=" + releaseLabelValue, null, null, null, null, null);
 
-                    pod.getSpec().putNodeSelectorItem("kubernetes.io/hostname", destinedNode.getMetadata().getName());
-//                    pod.getSpec().setNodeName(destinedNode.getMetadata().getName());
+                if (deployments != null) {
+                    System.out.println("Deployment gefunden!");
+                    V1Deployment oldDeployment = deployments.getItems().get(0);
+                    V1Deployment newDeployment = clone(oldDeployment);
 
-                    System.out.println("Moving Pod: " + pod.getMetadata().getName() + " to Node: " + destinedNode.getMetadata().getName());
-
-                    api.deleteNamespacedPod(Objects.requireNonNull(pod.getMetadata()).getName(), System.getenv("NAMESPACE"), null, null, 0, null, "Background", null);
-                    api.createNamespacedPod(System.getenv("NAMESPACE"), pod, null, null, null, null);
+                    V1PodSpec podSpec = getPodSpecFromDeploymentNullsafe(newDeployment);
+                    // deploy pod on destined node
+                    if (podSpec != null) {
+                        podSpec.putNodeSelectorItem("kubernetes.io/hostname", destinedNode.getMetadata().getName());
+                    }
+                    if (oldDeployment.getMetadata() != null) {
+                        appsV1Api.deleteNamespacedDeployment(oldDeployment.getMetadata().getName(), "default", null, null, 0, null, "Background", null);
+                        appsV1Api.createNamespacedDeployment("default", newDeployment, null, null, null, null);
+                    }
+                } else {
+                    System.out.println("No Deployment found!");
                 }
             }
         }
+    }
+
+    private V1PodSpec getPodSpecFromDeploymentNullsafe(V1Deployment deployment) {
+        if (deployment != null && deployment.getSpec() != null && deployment.getSpec() != null && deployment.getSpec().getTemplate() != null) {
+            return deployment.getSpec().getTemplate().getSpec();
+        }
+        return null;
+    }
+
+    private V1Deployment clone(V1Deployment deploymentToClone) {
+        V1Deployment clonedDeployment = new V1Deployment();
+        clonedDeployment.setApiVersion(deploymentToClone.getApiVersion());
+        clonedDeployment.setKind(deploymentToClone.getKind());
+        clonedDeployment.setMetadata(deploymentToClone.getMetadata());
+        if (clonedDeployment.getMetadata() != null) {
+            clonedDeployment.getMetadata().setResourceVersion(null);
+        }
+        clonedDeployment.setSpec(deploymentToClone.getSpec());
+        clonedDeployment.setStatus(deploymentToClone.getStatus());
+
+        return clonedDeployment;
     }
 }
