@@ -52,14 +52,17 @@ public class PodNodeMigrationHandler {
 
         try {
             // wait 2 minutes for pods to be ready (TODO: implement waiting logic)
+            System.out.println("Waiting for pods to be ready...");
             Thread.sleep(120000);
             MigrationFinishedMessage message = new MigrationFinishedMessage();
             message.setMigrationSuccessful(true);
+            System.out.println("Migration successful!");
             return message;
         } catch (InterruptedException e) {
             e.printStackTrace();
             MigrationFinishedMessage message = new MigrationFinishedMessage();
             message.setMigrationSuccessful(false);
+            System.out.println("Migration failed!");
             return message;
         }
     }

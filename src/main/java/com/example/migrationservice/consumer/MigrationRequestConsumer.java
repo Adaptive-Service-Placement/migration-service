@@ -56,15 +56,18 @@ public class MigrationRequestConsumer {
 
                 if (podNodeAssignement != null) {
                     MigrationFinishedMessage message = new PodNodeMigrationHandler().migratePods(appsV1Api, podNodeAssignement);
+                    System.out.println("Sending successful migration message...");
                     template.convertAndSend(MessagingConfig.INTERNAL_EXCHANGE, MessagingConfig.MIGRATION_FINISHED_ROUTING_KEY, message);
                 }
             } catch (IOException e) {
                 System.out.println("Oops something went wrong");
                 e.printStackTrace();
+                System.out.println("Sending failed migration message...");
                 sendMigrationNotSuccessfulMessage();
             } catch (ApiException e) {
                 System.out.println("Oops something went wrong");
                 System.out.println(e.getResponseBody());
+                System.out.println("Sending failed migration message...");
                 sendMigrationNotSuccessfulMessage();
             }
         }
