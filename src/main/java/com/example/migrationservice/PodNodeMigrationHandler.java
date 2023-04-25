@@ -1,8 +1,8 @@
 package com.example.migrationservice;
 
+import com.example.migrationservice.dto.MigrationFinishedMessage;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Map.Entry;
 
 public class PodNodeMigrationHandler {
 
-    public void migratePods(CoreV1Api api, AppsV1Api appsV1Api, Map<V1Node, List<V1Pod>> podNodeAssignement) throws ApiException {
+    public MigrationFinishedMessage migratePods(AppsV1Api appsV1Api, Map<V1Node, List<V1Pod>> podNodeAssignement) throws ApiException {
         System.out.println("Migrating services...");
         for (Entry<V1Node, List<V1Pod>> entry : podNodeAssignement.entrySet()) {
             List<V1Pod> groupedPods = entry.getValue();
@@ -47,6 +47,20 @@ public class PodNodeMigrationHandler {
                     System.out.println("No Deployment found!");
                 }
             }
+        }
+
+
+        try {
+            // wait 2 minutes for pods to be ready (TODO: implement waiting logic)
+            Thread.sleep(120000);
+            MigrationFinishedMessage message = new MigrationFinishedMessage();
+            message.setMigrationSuccessful(true);
+            return message;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            MigrationFinishedMessage message = new MigrationFinishedMessage();
+            message.setMigrationSuccessful(false);
+            return message;
         }
     }
 

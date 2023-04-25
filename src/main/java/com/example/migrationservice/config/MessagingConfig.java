@@ -16,6 +16,8 @@ public class MessagingConfig {
     public static final String EXECUTE_MIGRATION_QUEUE = "monitoring.mapping.migration";
     public static final String EXECUTE_MIGRATION_ROUTING_KEY = "migration_routingkey";
 
+    public static final String MIGRATION_FINISHED_ROUTING_KEY = "finished_routingkey";
+
     @Bean
     public Queue queue() {
         return new Queue(EXECUTE_MIGRATION_QUEUE);

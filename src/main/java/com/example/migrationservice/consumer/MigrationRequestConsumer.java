@@ -4,6 +4,7 @@ import com.example.migrationservice.KubernetesApiInstructionConverter;
 import com.example.migrationservice.PodNodeMigrationHandler;
 import com.example.migrationservice.Service;
 import com.example.migrationservice.config.MessagingConfig;
+import com.example.migrationservice.dto.MigrationFinishedMessage;
 import com.example.migrationservice.dto.MigrationInstruction;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -28,6 +29,9 @@ import java.util.stream.Collectors;
 @Component
 public class MigrationRequestConsumer {
 
+    @Autowired
+    RabbitTemplate template;
+
     @RabbitListener(queues = MessagingConfig.EXECUTE_MIGRATION_QUEUE)
     public void handleMigrationRequest(MigrationInstruction migrationInstruction) {
         if (migrationInstruction != null) {
@@ -51,19 +55,25 @@ public class MigrationRequestConsumer {
                 Map<V1Node, List<V1Pod>> podNodeAssignement = converter.getPodNodeAssignement();
 
                 if (podNodeAssignement != null) {
-                    new PodNodeMigrationHandler().migratePods(api, appsV1Api, podNodeAssignement);
+                    MigrationFinishedMessage message = new PodNodeMigrationHandler().migratePods(appsV1Api, podNodeAssignement);
+                    template.convertAndSend(MessagingConfig.INTERNAL_EXCHANGE, MessagingConfig.MIGRATION_FINISHED_ROUTING_KEY, message);
                 }
             } catch (IOException e) {
                 System.out.println("Oops something went wrong");
                 e.printStackTrace();
+                sendMigrationNotSuccessfulMessage();
             } catch (ApiException e) {
                 System.out.println("Oops something went wrong");
                 System.out.println(e.getResponseBody());
+                sendMigrationNotSuccessfulMessage();
             }
         }
 
     }
 
-    @Autowired
-    RabbitTemplate template;
+    public void sendMigrationNotSuccessfulMessage() {
+        MigrationFinishedMessage message = new MigrationFinishedMessage();
+        message.setMigrationSuccessful(false);
+        template.convertAndSend(MessagingConfig.INTERNAL_EXCHANGE, MessagingConfig.MIGRATION_FINISHED_ROUTING_KEY, message);
+    }
 }
