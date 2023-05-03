@@ -98,22 +98,20 @@ public class PodNodeMigrationHandler {
         long startTime = System.currentTimeMillis();
         long timeout = 300000; // 5 minute timeout
 
-        if (pod.getStatus() != null) {
-            while (System.currentTimeMillis() - startTime < timeout) {
-                System.out.println("Checking health of service " + pod.getMetadata().getName());
-                try {
-                    if (httpGetHealthEndpoint(appName) == 200) {
-                        System.out.println("Service is healthy!");
-                        healthy = true;
-                        break;
-                    }
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
-                    System.out.println("Service is not healthy yet...");
+        while (System.currentTimeMillis() - startTime < timeout) {
+            System.out.println("Checking health of service " + pod.getMetadata().getName());
+            try {
+                if (httpGetHealthEndpoint(appName) == 200) {
+                    System.out.println("Service is healthy!");
+                    healthy = true;
+                    break;
                 }
-                // Wait 10 seconds
-                Thread.sleep(10000);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                System.out.println("Service is not healthy yet...");
             }
+            // Wait 10 seconds
+            Thread.sleep(10000);
         }
         return healthy;
     }
