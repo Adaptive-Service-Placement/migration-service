@@ -104,18 +104,19 @@ public class PodNodeMigrationHandler {
                         break;
                     }
                     System.out.println("Service is not healthy yet...");
-                } catch (IOException e) {
+                } catch (Exception e) {
+                    System.out.println("Ups, something went wrong!");
                     e.printStackTrace();
                 }
-                // Wait 5 seconds
-                Thread.sleep(5000);
+                // Wait 10 seconds
+                Thread.sleep(10000);
             }
         }
         return healthy;
     }
 
     private int httpGetHealthEndpoint(String podIp) throws IOException {
-        URL url = new URL("http://" + podIp + "/hc");
+        URL url = new URL("http://" + podIp + ":80/hc");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         return connection.getResponseCode();
