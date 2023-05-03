@@ -126,6 +126,7 @@ public class PodNodeMigrationHandler {
         System.out.println("Requesting url: " + "http://" + appName + "/hc");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
+        connection.setConnectTimeout(10000);
         return connection.getResponseCode();
     }
 
