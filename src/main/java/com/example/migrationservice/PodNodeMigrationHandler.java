@@ -89,6 +89,12 @@ public class PodNodeMigrationHandler {
     private boolean healthCheckService(V1Pod pod) throws InterruptedException {
         boolean healthy = false;
 
+        String appName = pod.getMetadata().getLabels().get("app");
+        if (appName == null) {
+            System.out.println("No such name!");
+            return false;
+        }
+
         long startTime = System.currentTimeMillis();
         long timeout = 300000; // 5 minute timeout
 
@@ -98,7 +104,7 @@ public class PodNodeMigrationHandler {
                 try {
                     String POD_IP = pod.getStatus().getPodIP();
 
-                    if (httpGetHealthEndpoint(POD_IP) == 200) {
+                    if (httpGetHealthEndpoint(appName) == 200) {
                         System.out.println("Service is healthy!");
                         healthy = true;
                         break;
@@ -115,9 +121,9 @@ public class PodNodeMigrationHandler {
         return healthy;
     }
 
-    private int httpGetHealthEndpoint(String podIp) throws IOException {
-        URL url = new URL("http://" + podIp + ":80/hc");
-        System.out.println("Requesting url: " + "http://" + podIp + ":80/hc");
+    private int httpGetHealthEndpoint(String appName) throws IOException {
+        URL url = new URL("http://" + appName + "/hc");
+        System.out.println("Requesting url: " + "http://" + appName + "/hc");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         return connection.getResponseCode();
