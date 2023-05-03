@@ -117,6 +117,7 @@ public class PodNodeMigrationHandler {
 
     private int httpGetHealthEndpoint(String podIp) throws IOException {
         URL url = new URL("http://" + podIp + ":80/hc");
+        System.out.println("Requesting url: " + "http://" + podIp + ":80/hc");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         return connection.getResponseCode();
