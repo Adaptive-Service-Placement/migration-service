@@ -56,7 +56,7 @@ public class MigrationRequestConsumer {
 
                 if (podNodeAssignement != null) {
                     MigrationFinishedMessage message = new PodNodeMigrationHandler().migratePods(appsV1Api, podNodeAssignement);
-                    System.out.println("Sending successful migration message...");
+                    System.out.println("Sending migration message...");
                     template.convertAndSend(MessagingConfig.INTERNAL_EXCHANGE, MessagingConfig.MIGRATION_FINISHED_ROUTING_KEY, message);
                 }
             } catch (IOException e) {

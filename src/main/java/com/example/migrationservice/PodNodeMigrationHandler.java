@@ -90,11 +90,11 @@ public class PodNodeMigrationHandler {
         boolean healthy = false;
 
         long startTime = System.currentTimeMillis();
-        long timeout = 60000; // 1 minute timeout
+        long timeout = 300000; // 5 minute timeout
 
         if (pod.getStatus() != null) {
             while (System.currentTimeMillis() - startTime < timeout) {
-                System.out.println("Checking health of service...");
+                System.out.println("Checking health of service " + pod.getMetadata().getName());
                 try {
                     String POD_IP = pod.getStatus().getPodIP();
 
