@@ -5,6 +5,10 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.models.*;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,6 +17,7 @@ public class PodNodeMigrationHandler {
 
     public MigrationFinishedMessage migratePods(AppsV1Api appsV1Api, Map<V1Node, List<V1Pod>> podNodeAssignement) throws ApiException {
         System.out.println("Migrating services...");
+        List<V1Pod> migratedPods = new ArrayList<>();
         for (Entry<V1Node, List<V1Pod>> entry : podNodeAssignement.entrySet()) {
             List<V1Pod> groupedPods = entry.getValue();
             V1Node destinedNode = entry.getKey();
@@ -40,6 +45,7 @@ public class PodNodeMigrationHandler {
                         podSpec.putNodeSelectorItem("kubernetes.io/hostname", destinedNode.getMetadata().getName());
                     }
                     if (oldDeployment.getMetadata() != null) {
+                        migratedPods.add(pod);
                         appsV1Api.deleteNamespacedDeployment(oldDeployment.getMetadata().getName(), "default", null, null, 0, null, "Background", null);
                         appsV1Api.createNamespacedDeployment("default", newDeployment, null, null, null, null);
                     }
@@ -52,11 +58,24 @@ public class PodNodeMigrationHandler {
 
         try {
             // wait 2 minutes for pods to be ready (TODO: implement waiting logic)
+            // ideas: Health checks
             System.out.println("Waiting for pods to be ready...");
-            Thread.sleep(120000);
+//            Thread.sleep(120000);
+
+            boolean migrationSuccessful = true;
+            for (V1Pod pod : migratedPods) {
+                if (!healthCheckService(pod)) {
+                    migrationSuccessful = false;
+                    break;
+                }
+            }
             MigrationFinishedMessage message = new MigrationFinishedMessage();
-            message.setMigrationSuccessful(true);
-            System.out.println("Migration successful!");
+            message.setMigrationSuccessful(migrationSuccessful);
+            if (migrationSuccessful) {
+                System.out.println("Migration successful!");
+            } else {
+                System.out.println("Migration failed!");
+            }
             return message;
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -65,6 +84,41 @@ public class PodNodeMigrationHandler {
             System.out.println("Migration failed!");
             return message;
         }
+    }
+
+    private boolean healthCheckService(V1Pod pod) throws InterruptedException {
+        boolean healthy = false;
+
+        long startTime = System.currentTimeMillis();
+        long timeout = 60000; // 1 minute timeout
+
+        if (pod.getStatus() != null) {
+            while (System.currentTimeMillis() - startTime < timeout) {
+                System.out.println("Checking health of service...");
+                try {
+                    String POD_IP = pod.getStatus().getPodIP();
+
+                    if (httpGetHealthEndpoint(POD_IP) == 200) {
+                        System.out.println("Service is healthy!");
+                        healthy = true;
+                        break;
+                    }
+                    System.out.println("Service is not healthy yet...");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                // Wait 5 seconds
+                Thread.sleep(5000);
+            }
+        }
+        return healthy;
+    }
+
+    private int httpGetHealthEndpoint(String podIp) throws IOException {
+        URL url = new URL("http://" + podIp + "/hc");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        return connection.getResponseCode();
     }
 
     private V1PodSpec getPodSpecFromDeploymentNullsafe(V1Deployment deployment) {
